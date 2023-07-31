@@ -2,10 +2,7 @@ import asyncio
 
 from alembic import context
 from sqlalchemy.ext.asyncio import create_async_engine
-
-# from app.config import settings
 from app.core.settings import settings
-# from app.models.base import Base
 from app.models.basemodel import BaseModel
 
 target_metadata = BaseModel.metadata
