@@ -1,0 +1,109 @@
+version: '3.7'
+
+# In the development docker-compose file,
+# we're running the Uvicorn server with hot-reloading enabled,
+# which is beneficial for development since the server will automatically reflect code changes.
+# We let docker build the redi cluster then pick the redis url from it.
+
+# Defining a dedicated network for better isolation
+networks:
+  styrate_network:
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: ./compose/development/Dockerfile
+    image: styrate_api
+    # '/start' is the shell script used to run the service
+    command: /start
+    # this volume is used to map the files and folders on the host to the container
+    # so if we change code on the host, code in the docker container will also be changed
+    volumes:
+      - .:/app
+    ports:
+      - 8000:8000
+    # env_file is used to manage the env variables of our project
+    env_file:
+      - ./.env
+    depends_on:
+      - styrate
+    networks:
+      - styrate_network
+  # api:
+  #   build: .
+  #   command: uvicorn main:app --reload --host 0.0.0.0 --port 8000
+  #   volumes:
+  #     - .:/app
+  #   ports:
+  #     - 8000:8000
+  #   env_file:  # Add environment variables from .env file
+  #     - ./.env
+  #   depends_on:  # API service depends on both db and redis services
+  #     - db
+  #     - redis
+  #   networks:  # Assign service to the network
+  #     - fastapi_network
+
+  styrate:
+    image: postgres:12-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:  # Use environment variables for db configuration
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DATABASE=${POSTGRES_DATABASE}
+    
+    networks:  # Assign service to the network
+      - styrate_network
+  pgadmin:
+    container_name: pgadmin-styrate
+    image: dpage/pgadmin4
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=pgadmin4@pgadmin.org
+      - PGADMIN_DEFAULT_PASSWORD=admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - styrate
+    networks:
+      - styrate_network
+
+  
+  rabbitmq3:
+    image: rabbitmq:3.12.2-management
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
+    ports:
+      # AMQ
+      - '5672:5672'
+      # HTTP management UI
+      - '15672:15672'
+    networks:
+      - styrate_network
+  
+  celery_worker:
+    build:
+      context: .
+      dockerfile: ./compose/development/Dockerfile
+    image: styrate_celery_worker
+    command: /start-celeryworker
+    volumes:
+      - .:/app
+    env_file:
+      - ./.env/
+    depends_on:
+      - styrate
+    networks:
+      - styrate_network
+  # celeryworker:
+  #   build: .
+  #   command: celery -A main.celery worker --loglevel=info -Q send_email -P threads
+  #   networks:
+  #     - fastapi_network
+  #   depends_on:
+  #     - api
+volumes:
+  postgres_data:
+
