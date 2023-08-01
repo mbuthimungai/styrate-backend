@@ -20,6 +20,7 @@ class Settings(BaseModel):
     API_V1_STR: str = f"/api/{API_VERSION}"
     ASYNC_DATABASE_URI: str = os.getenv("ASYNC_DATABASE_URI")
     SECRET_KEY: str = secrets.token_urlsafe(32)
+    BACKEND_CORS_ORIGINS: list = [os.getenv("BACKEND_CORS_ORIGINS")]
     
 settings = Settings()
 
