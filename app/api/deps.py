@@ -19,7 +19,7 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
         yield db
         
 async def get_user_db(db: Annotated[AsyncSession, Depends(get_db)]):
-    yield SQLAlchemyBaseUserTable(db, Users)
+    yield SQLAlchemyUserDatabase(db, Users)
     
 
 SECRET = settings.SECRET_KEY
