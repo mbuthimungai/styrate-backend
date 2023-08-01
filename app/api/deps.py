@@ -44,7 +44,7 @@ class UserManager(UUIDIDMixin, BaseUserManager[Users, uuid.UUID]):
 async def get_user_manager(user_db: SQLAlchemyUserDatabase = Depends(get_user_db)):
     yield UserManager(user_db)
 
-bearer_transport = BearerTransport(tokenUrl="api/v1/auth/jwt/login")
+bearer_transport = BearerTransport(tokenUrl="api/v1/users/auth/jwt/login")
 
 
 def get_jwt_strategy() -> JWTStrategy:
